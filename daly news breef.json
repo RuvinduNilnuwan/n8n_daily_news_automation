@@ -1,0 +1,305 @@
+{
+  "name": "daly news breef",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "033dcba9-50a4-47f4-89b6-c41283234e48",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://feeds.bbci.co.uk/news/rss.xml",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        176,
+        -144
+      ],
+      "id": "d72302cf-ff86-46b1-932b-394b841e81ea",
+      "name": "worldnews"
+    },
+    {
+      "parameters": {
+        "url": "https://techcrunch.com/feed/",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        176,
+        32
+      ],
+      "id": "119c412c-f83a-4b51-aeb8-b4115d98e52d",
+      "name": "technews"
+    },
+    {
+      "parameters": {
+        "url": "https://feeds.ign.com/ign/games-all",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        176,
+        192
+      ],
+      "id": "819d5211-19e4-453a-a6e7-30ae99b156ed",
+      "name": "gaming"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        672,
+        32
+      ],
+      "id": "d5b6fda7-6554-4e9c-8273-4ef8de53f4d6",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ffef9182-ac1e-439b-9453-7bdd51fa5533",
+              "name": "title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "1ea2299d-018a-40c2-9b44-1048dbe10b45",
+              "name": "summary",
+              "value": "={{ $json.contentSnippet }}",
+              "type": "string"
+            },
+            {
+              "id": "ae09454b-658e-4ed2-8ed0-09b67d432474",
+              "name": "url",
+              "value": "={{ $json.link }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        880,
+        32
+      ],
+      "id": "d8df6168-d14c-417d-ab23-087ec9bf4f99",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a professional news editor."
+            },
+            {
+              "content": "=Summarize the following news into a short daily briefing.\n\nRules:\n- Categorize into: Tech, Gaming, Business, World\n- Keep it under 200 words total\n- Only include important news\n- Make it clean and readable\n\nNews:\n{{ $json.news }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        1296,
+        32
+      ],
+      "id": "cbb773da-510a-40f6-86f7-fe76d673d1b5",
+      "name": "ai connect",
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": ""
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nlet combined = \"\";\nlet count = 1;\n\nitems.forEach((item) => {\n  const title = item.json.title || \"No title\";\n  const summary = item.json.summary || item.json.content || \"No summary available\";\n\n  combined += `${count}. ${title}\\n`;\n  combined += `${summary}\\n\\n`;\n  count++;\n});\n\nreturn [\n  {\n    json: {\n      news: combined\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        32
+      ],
+      "id": "f013142d-bfad-4f5f-8c8e-1baff57381d5",
+      "name": "summerizing"
+    },
+    {
+      "parameters": {
+        "fromEmail": "yourmail",
+        "toEmail": "yourmail",
+        "subject": "Daily News Brief",
+        "html": "={{ $json.output[0].content[0].text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1648,
+        32
+      ],
+      "id": "03e31568-edae-4323-b1c2-170f3bd30e96",
+      "name": "Send an Email",
+      "webhookId": "",
+      "credentials": {
+        "smtp": {
+          "id": "oou0ATYsX0Zwbi10",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "worldnews",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "technews",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "gaming",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "worldnews": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "technews": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "gaming": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "summerizing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "summerizing": {
+      "main": [
+        [
+          {
+            "node": "ai connect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ai connect": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "timezone": "yourtimezone",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "e0d48213-275d-4d90-a178-44b8513ac8e7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4c5adce02090c3527443e1619a56926ba1ad0f9f77307bdb9df84bb9aee9a9f1"
+  },
+  "id": "i6B2Iz7CS6BvKejC",
+  "tags": []
+}
