@@ -17,7 +17,7 @@ This project is an automated news aggregation and summarization system built usi
 
 ## Workflow
 
-![Workflow](screenshots/workflow.png)
+screenshot attached
 
 ##  How it works
 
